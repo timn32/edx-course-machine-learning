@@ -91,3 +91,127 @@ confusionMatrix(data = factor(y_hat_sex_class), reference = factor(test_set$Surv
 F_meas(data = factor(y_hat_sex), reference = factor(test_set$Survived))
 F_meas(data = factor(y_hat_class), reference = factor(test_set$Survived))
 F_meas(data = factor(y_hat_sex_class), reference = factor(test_set$Survived))
+
+
+# Question 7
+set.seed(1)
+# x_test <- factor(test_set$Survived)
+# y_test <- test_set$Fare
+# dat_test <- data.frame(Survived=factor(x_test), Fare = y_test)) 
+
+train_lda <- train(Survived~Fare, 
+                   method = "lda", data = train_set)
+y_hat_lda <- predict(train_lda, test_set)
+confusionMatrix(data = y_hat_lda, 
+                reference = test_set$Survived)$overall["Accuracy"]
+
+set.seed(1)
+train_qda <- train(Survived~Fare, 
+                   method = "qda", data = train_set)
+y_hat_qda <- predict(train_qda, test_set)
+confusionMatrix(data = y_hat_qda, 
+                reference = test_set$Survived)$overall["Accuracy"]
+
+
+# Question 8
+# Age predictor only
+set.seed(1)
+train_glm <- train(Survived~Age, method = "glm", 
+                   data = train_set)
+y_hat_glm <- predict(train_glm, test_set, type = "raw")
+confusionMatrix(y_hat_glm, test_set$Survived)$overall["Accuracy"]
+
+# Age Sex Class Fare predictors
+set.seed(1)
+train_glm <- train(Survived~Age+Sex+Pclass+Fare, method = "glm", 
+                   data = train_set)
+y_hat_glm <- predict(train_glm, test_set, type = "raw")
+confusionMatrix(y_hat_glm, test_set$Survived)$overall["Accuracy"]
+
+# all predictors
+set.seed(1)
+train_glm <- train(Survived~., method = "glm", 
+                   data = train_set)
+y_hat_glm <- predict(train_glm, test_set, type = "raw")
+confusionMatrix(y_hat_glm, test_set$Survived)$overall["Accuracy"]
+
+# Question 9
+set.seed(6)
+train_knn <- train(Survived~., method = "knn", 
+                   tuneGrid = data.frame(k = seq(3, 51, 2)),
+                   data = train_set)
+train_knn$bestTune
+
+# question 9b
+ggplot(train_knn)
+
+# question 9c
+y_hat_knn <- predict(train_knn, test_set, type = "raw")
+confusionMatrix(y_hat_knn, test_set$Survived)$overall["Accuracy"]
+# answer code used this method
+mean(y_hat_knn == test_set$Survived)
+
+# Question 10
+control <- trainControl(method = "cv", number = 10, p = 0.1)
+set.seed(8)
+train_knn_10 <- train(Survived~., method = "knn",
+                      tuneGrid = data.frame(k = seq(3, 51, 2)),
+                      data = train_set, 
+                      trControl = control)
+y_hat_knn_10 <- predict(train_knn_10, test_set, type = "raw")
+train_knn_10$bestTune
+confusionMatrix(y_hat_knn_10, test_set$Survived)$overall["Accuracy"]
+
+# Question 11
+set.seed(10)
+train_rpart_11 <- train(Survived ~ ., method = "rpart", 
+                        tuneGrid = data.frame(cp = seq(0, 0.05, 0.002)), 
+                        data = train_set)
+train_rpart_11$bestTune
+y_hat_rpart_11 <- predict(train_rpart_11, test_set, type = "raw")
+confusionMatrix(y_hat_rpart_11, test_set$Survived)$overall["Accuracy"]
+
+
+# Question 11B
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+train_rpart_11$finalModel
+plot(train_rpart_11$finalModel)
+text(train_rpart_11$finalModel, cex = 0.75)
+fancyRpartPlot(train_rpart_11)
+
+# question 11C
+titanic_clean %>%
+  group_by(Sex, Pclass, Age, Fare) %>%
+  summarize(Survived = mean(Survived ==1)) %>%
+  filter(Sex == "female", Pclass == 2)
+
+
+# question 11C
+titanic_clean %>%
+  group_by(Sex, Pclass, Fare) %>%
+  summarize(Survived = mean(Survived ==1)) %>%
+  filter(Sex == "female", Pclass == 3, Fare >= 23.35)
+
+# Question 12
+set.seed(14)
+train_rf_12 <- train(Survived ~ ., method = "rf", 
+                     tuneGrid = data.frame(mtry = seq(1,7,1)), 
+                     ntree = 100, data = train_set)
+y_hat_rf_12 <- predict(train_rf_12, test_set, type = "raw")
+train_rf_12$bestTune
+confusionMatrix(y_hat_rf_12, test_set$Survived)$overall["Accuracy"]
+
+
+imp <- varImp(train_rf_12)
+imp 
+
+data_frame(term = rownames(imp$importance), 
+           importance = imp$importance$Overall) %>%
+  mutate(rank = rank(-importance)) %>%
+  arrange(desc(importance))
+
+# answer code
+varImp(train_rf)    # first row
