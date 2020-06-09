@@ -17,11 +17,11 @@ y <- factor(mnist$train$labels[index])
 
 index <- sample(nrow(mnist$test$images), 1000)
 x_test <- mnist$test$images[index,]
-y_test <- mnist$test$labels[index]
+y_test <- factor(mnist$test$labels[index])
 
 image(matrix(1:784 %in% x , 28, 28))
 
-# section 6.2 preprocessing MNIST data
+# section 6.1.2 preprocessing MNIST data
 library(matrixStats)
 sds <- colSds(x)
 qplot(sds, bins = 256, color = I("black"))
@@ -33,7 +33,7 @@ image(matrix(1:784 %in% nzv, 28, 28))
 col_index <- setdiff(1:ncol(x), nzv)
 length(col_index)
 
-# section 6.3 model fitting for mnist data
+# section 6.1.3 model fitting for mnist data
 colnames(x) <- 1: ncol(mnist$train$images)
 colnames(x_test) <- colnames(x)
 
@@ -122,3 +122,49 @@ for(i in 1:12){
 }
 
 
+# Section 6.1.4 Variable Importance
+library(dslabs)
+library(tidyverse)
+library(randomForest)
+library(caret)
+
+x <- mnist$train$images[index,]
+y <- factor(mnist$train$labels[index])
+rf <- randomForest(x, y, ntree = 50)
+imp <- importance(rf)
+imp
+
+image(matrix(imp, 28, 28))
+
+p_max <- predict(fit_rf, x_test[, col_index])$census
+p_max <- p_max / rowSums(p_max)
+p_max <- apply(p_max, 1, max)
+ind <- which(y_hat_rf != y_test)
+ind <- ind[order(p_max[ind], decreasing = TRUE)]
+rafalib::mypar(3,4)
+for(i in ind[1:12]){
+  image(matrix(x_test[i, ], 28, 28)[, 28:1],
+        main = paste0("Pr(",y_hat_rf[i],")=", round(p_max[i], 2),
+                      "but is a ", y_test[i]),
+        xaxt="n", yaxt = "n")
+}
+
+
+# Section 6.1.5 Ensembles
+p_rf <- predict(fit_rf, x_test[,col_index])$census
+p_rf <- p_rf / rowSums(p_rf)
+p_knn <- predict(fit_knn, x_test[,col_index])
+p <- (p_rf + p_knn)/2
+y_pred <- factor(apply(p , 1, which.max)-1)
+
+confusionMatrix(y_pred, y_test)
+
+str(y_pred)
+str(y_test)
+levels(y_pred)
+levels(y_test)
+head(y_test)
+class(y_pred)
+class(y_test)
+length(y_pred)
+length(y_test)
