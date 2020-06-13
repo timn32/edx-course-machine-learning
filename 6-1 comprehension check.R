@@ -114,3 +114,36 @@ ind <- acc_hat >= 0.8
 votes <- rowMeans(pred[,ind] == "7")
 y_hat <- ifelse(votes>=0.5, 7, 2)
 mean(y_hat == mnist_27$test$y)
+
+
+# Part 2 Comprehension check
+library(tidyverse)
+library(dslabs)
+library(caret)
+library(randomForest)
+library(Rborist)
+library(matrixStats)
+
+library(dslabs)
+data("tissue_gene_expression")
+dim(tissue_gene_expression$x)
+
+# Question 1
+str((tissue_gene_expression$x))
+str(tissue_gene_expression)
+head(tissue_gene_expression$x,1)
+class((tissue_gene_expression$x))
+
+d <- dist(t(tissue_gene_expression$x))
+dim(as.matrix(d))
+head(d)
+str(d)
+d %>% tibble %>% mutate(y = tissue_gene_expression$y)
+
+x <- tissue_gene_expression$x
+x_1 <- x[,1:2]
+head(x_1)
+strr(x_1)
+class(x_1)
+dist(x_1)
+h <- hclust(dist(t(x_1)))
